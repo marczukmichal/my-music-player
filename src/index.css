@@ -31,8 +31,12 @@ nav a:hover {
   padding: 10px;
   border-top: 1px solid #ccc;
 }
-img.homeArtistImgMaxWidth128 {
+img.homeArtistImgMaxWidth128,
+img.albumCoverAlbumImgMaxWidth128 {
   max-width: 128px;
+}
+img.songCoverBottomPlayerMaxWidth64 {
+  max-width: 64px;
 }
 
 li {

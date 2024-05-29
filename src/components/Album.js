@@ -43,12 +43,19 @@ const Album = ({ playTrack }) => {
   );
 
   const artists = album.artists.map((artist) => artist.pseudonym).join(", ");
+  const artistLabel = album.artists.length === 1 ? "Artist" : "Artists";
 
   return (
     <div>
       <h1>{album.title}</h1>
-      <h3>Artists: {artists}</h3>
-      <img src={album.cover_image} alt={album.title} />
+      <h3>
+        {artistLabel}: <b>{artists}</b>
+      </h3>
+      <img
+        className="albumCoverAlbumImgMaxWidth128"
+        src={"../../img/albums/" + album.id + "/" + album.cover_image}
+        alt={album.title}
+      />
       <h2>Tracks</h2>
       <ul>
         {album.tracks.map((track) => (

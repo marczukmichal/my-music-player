@@ -84,6 +84,49 @@ app.get("/api/albums/:albumId", (req, res) => {
   });
 });
 
+//okladka albumu endpoint
+app.get("/api/tracks/:trackId", (req, res) => {
+  const trackId = req.params.trackId;
+  const query = `
+    SELECT 
+      s.id AS song_id, 
+      s.title AS song_title,
+      s.duration AS song_duration,
+      a.id AS album_id, 
+      a.title AS album_title, 
+      a.cover_image AS album_cover_image
+    FROM songs s
+    JOIN albums a ON s.album_id = a.id
+    WHERE s.id = ?
+  `;
+
+  connection.query(query, [trackId], (error, results) => {
+    if (error) {
+      console.error("Error executing query:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    if (!results || results.length === 0) {
+      res.status(404).json({ error: "Track not found" });
+      return;
+    }
+
+    const track = {
+      id: results[0].song_id,
+      title: results[0].song_title,
+      duration: results[0].song_duration,
+      album: {
+        id: results[0].album_id,
+        title: results[0].album_title,
+        cover_image: results[0].album_cover_image,
+      },
+    };
+
+    res.json(track);
+  });
+});
+
 // Utwórz endpoint GET dla albumu danego artysty
 
 app.get("/api/artists/:artistId/albums", (req, res) => {

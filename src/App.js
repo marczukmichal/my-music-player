@@ -11,10 +11,17 @@ import AudioPlayer from "./components/AudioPlayer";
 const App = () => {
   const [currentTrack, setCurrentTrack] = useState(null);
 
-  const playTrack = (track) => {
-    setCurrentTrack(track);
+  const playTrack = async (track) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/tracks/${track.id}`
+      );
+      const trackData = await response.json();
+      setCurrentTrack(trackData);
+    } catch (error) {
+      console.error("Error fetching track data:", error);
+    }
   };
-
   return (
     <Router>
       <Layout>
