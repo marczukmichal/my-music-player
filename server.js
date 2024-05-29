@@ -37,51 +37,53 @@ const storage = multer.diskStorage({
     if (file.fieldname === "mp3") {
       cb(null, "public/music/");
     } else if (file.fieldname === "cover") {
-      cb(null, "public/covers/");
+      cb(null, "public/img/albums/");
     }
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
-
 const upload = multer({ storage });
-
-// Endpoint do przesyłania plików i zapisywania danych
 app.post(
   "/upload",
   upload.fields([{ name: "mp3" }, { name: "cover" }]),
   (req, res) => {
-    const { title, artistId, albumId } = req.body;
-    const mp3File = req.files["mp3"][0].path;
+    const { songId, isNewAlbum } = req.body;
     const coverImage = req.files["cover"][0].path;
 
-    const query =
-      "INSERT INTO songs (title, album_id, created_at) VALUES (?, ?, NOW())";
-    connection.query(query, [title, albumId], (err, result) => {
-      if (err) {
-        console.error("Error executing query:", err);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-
-      const songId = result.insertId;
-
-      const songArtistQuery =
-        "INSERT INTO song_artists (song_id, artist_id) VALUES (?, ?)";
-      connection.query(songArtistQuery, [songId, artistId], (err, result) => {
+    if (isNewAlbum === "true") {
+      // Wstaw nowy album
+      const query = "INSERT INTO albums (title, cover_image) VALUES (?, ?)";
+      connection.query(query, [songId, coverImage], (err, result) => {
         if (err) {
           console.error("Error executing query:", err);
           res.status(500).json({ error: "Internal server error" });
           return;
         }
 
-        res.json({ message: "File uploaded and data saved successfully" });
+        res.json({
+          message: "New album created and cover image uploaded successfully",
+        });
       });
-    });
+    } else {
+      // Zaktualizuj istniejący album
+      const query = "UPDATE albums SET cover_image = ? WHERE id = ?";
+      connection.query(query, [coverImage, songId], (err, result) => {
+        if (err) {
+          console.error("Error executing query:", err);
+          res.status(500).json({ error: "Internal server error" });
+          return;
+        }
+
+        res.json({
+          message:
+            "Cover image uploaded and associated with album successfully",
+        });
+      });
+    }
   }
 );
-
 // Utwórz endpoint GET dla albumu
 app.get("/api/albums/:albumId", (req, res) => {
   const albumId = req.params.albumId;
@@ -102,6 +104,64 @@ app.get("/api/albums/:albumId", (req, res) => {
   JOIN song_artists sa ON s.id = sa.song_id
   JOIN artists ar ON sa.artist_id = ar.id
   WHERE a.id = ?
+`;
+
+  connection.query(query, [albumId], (error, results) => {
+    if (error) {
+      console.error("Error executing query:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    // Sprawdzenie czy wyniki zapytania są zdefiniowane
+    if (!results || results.length === 0) {
+      res.status(404).json({ error: "Album not found" });
+      return;
+    }
+
+    // Przetwarzanie wyników zapytania
+    const album = {
+      id: results[0].id,
+      title: results[0].title,
+      cover_image: results[0].cover_image,
+      release_date: results[0].release_date,
+      created_at: results[0].created_at,
+      artists: results.map((result) => ({
+        pseudonym: result.artist_pseudonym,
+      })),
+      tracks: results.map((result) => ({
+        id: result.song_id,
+        title: result.song_title,
+        duration: result.song_duration,
+      })),
+    };
+
+    res.json(album);
+  });
+});
+
+/// dla wsyzstkich albumow
+
+// Utwórz endpoint GET dla albumu
+app.get("/api/albums/", (req, res) => {
+  const albumId = req.params.albumId;
+  const query = `
+  SELECT 
+    a.id, 
+    a.title, 
+    a.cover_image, 
+    a.release_date, 
+    a.created_at, 
+    s.id AS song_id, 
+    s.title AS song_title,
+    s.duration AS song_duration,
+    ar.pseudonym AS artist_pseudonym
+  FROM albums a
+  JOIN album_artists aa ON a.id = aa.album_id
+  JOIN songs s ON a.id = s.album_id
+  JOIN song_artists sa ON s.id = sa.song_id
+  JOIN artists ar ON sa.artist_id = ar.id
+ 
 `;
 
   connection.query(query, [albumId], (error, results) => {

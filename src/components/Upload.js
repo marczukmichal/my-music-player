@@ -8,8 +8,8 @@ const Upload = () => {
     album: "",
     newArtist: false,
     newAlbum: false,
-    mp3File: null,
-    coverImage: null,
+    mp3: null,
+    cover: null,
     existingArtists: [],
     existingAlbums: [],
   });
@@ -79,11 +79,11 @@ const Upload = () => {
               (album) => album.title === formData.album
             ).id
       );
-      formDataToSend.append("mp3File", formData.mp3File);
-      formDataToSend.append("coverImage", formData.coverImage);
+      formDataToSend.append("mp3", formData.mp3);
+      formDataToSend.append("cover", formData.cover);
 
       const response = await axios.post(
-        "http://localhost:3000/api/upload",
+        "http://localhost:3000/upload",
         formDataToSend
       );
       console.log("Upload successful:", response.data);
@@ -113,11 +113,12 @@ const Upload = () => {
           disabled={formData.newArtist}
         >
           <option value="">Select artist</option>
-          {formData.existingArtists.map((artist) => (
-            <option key={artist.id} value={artist.name}>
-              {artist.name}
-            </option>
-          ))}
+          {Array.isArray(formData.existingArtists) &&
+            formData.existingArtists.map((artist) => (
+              <option key={artist.id} value={artist.name}>
+                {artist.name}
+              </option>
+            ))}
         </select>
         <input
           type="checkbox"
@@ -147,11 +148,12 @@ const Upload = () => {
           disabled={formData.newAlbum}
         >
           <option value="">Select album</option>
-          {formData.existingAlbums.map((album) => (
-            <option key={album.id} value={album.title}>
-              {album.title}
-            </option>
-          ))}
+          {Array.isArray(formData.existingAlbums) &&
+            formData.existingAlbums.map((album) => (
+              <option key={album.id} value={album.title}>
+                {album.title}
+              </option>
+            ))}
         </select>
         <input
           type="checkbox"
@@ -171,12 +173,12 @@ const Upload = () => {
             onChange={handleChange}
           />
           <label>Album Cover Image:</label>
-          <input type="file" name="coverImage" onChange={handleFileChange} />
+          <input type="file" name="cover" onChange={handleFileChange} />
         </div>
       )}
       <div>
-        <label>MP3 File:</label>
-        <input type="file" name="mp3File" onChange={handleFileChange} />
+        <label>mp3 File:</label>
+        <input type="file" name="mp3" onChange={handleFileChange} />
       </div>
       <button type="submit">Upload</button>
     </form>
