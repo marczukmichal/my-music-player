@@ -1,6 +1,8 @@
 const express = require("express");
 const mysql = require("mysql");
-const cors = require("cors"); // Importowanie modułu cors
+const cors = require("cors");
+const multer = require("multer");
+const path = require("path");
 
 const app = express();
 app.use(cors()); // Dodanie obsługi CORS
@@ -28,6 +30,58 @@ connection.connect((err) => {
   }
   console.log("Connected to the database");
 });
+
+// Konfiguracja multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (file.fieldname === "mp3") {
+      cb(null, "public/music/");
+    } else if (file.fieldname === "cover") {
+      cb(null, "public/covers/");
+    }
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+// Endpoint do przesyłania plików i zapisywania danych
+app.post(
+  "/upload",
+  upload.fields([{ name: "mp3" }, { name: "cover" }]),
+  (req, res) => {
+    const { title, artistId, albumId } = req.body;
+    const mp3File = req.files["mp3"][0].path;
+    const coverImage = req.files["cover"][0].path;
+
+    const query =
+      "INSERT INTO songs (title, album_id, created_at) VALUES (?, ?, NOW())";
+    connection.query(query, [title, albumId], (err, result) => {
+      if (err) {
+        console.error("Error executing query:", err);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+
+      const songId = result.insertId;
+
+      const songArtistQuery =
+        "INSERT INTO song_artists (song_id, artist_id) VALUES (?, ?)";
+      connection.query(songArtistQuery, [songId, artistId], (err, result) => {
+        if (err) {
+          console.error("Error executing query:", err);
+          res.status(500).json({ error: "Internal server error" });
+          return;
+        }
+
+        res.json({ message: "File uploaded and data saved successfully" });
+      });
+    });
+  }
+);
+
 // Utwórz endpoint GET dla albumu
 app.get("/api/albums/:albumId", (req, res) => {
   const albumId = req.params.albumId;

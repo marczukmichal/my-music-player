@@ -7,6 +7,7 @@ import Layout from "./components/Layout";
 import Artist from "./components/Artist";
 import Album from "./components/Album";
 import AudioPlayer from "./components/AudioPlayer";
+import Upload from "./components/Upload";
 
 const App = () => {
   const [currentTrack, setCurrentTrack] = useState(null);
@@ -29,6 +30,7 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/about" element={<About />} />
+          <Route path="/upload" element={<Upload />} />
           <Route
             path="/artist/:artistId"
             element={<Artist playTrack={playTrack} />}
